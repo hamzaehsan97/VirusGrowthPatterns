@@ -31,7 +31,7 @@ library(gridExtra)
 2) knit file to html.
 
 ## Results
-N/A
+https://hamzaehsan97.github.io/COVID-19_Growth_Patterns/
 
 ## Built With
 
