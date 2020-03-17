@@ -17,12 +17,12 @@ library(tidyverse)
 
 ```{r}
 #Import WHO report data
-data_WHO <- read.csv('WHO_country.csv')
-data1 <- read.csv('COVID19_line_list_data.csv')
-data3 <- read.csv('COVID19_open_line_list.csv')
-data4 <- read.csv('time_series_covid_19_confirmed.csv')
-data5 <- read.csv('time_series_covid_19_deaths.csv')
-data6 <- read.csv('time_series_covid_19_recovered.csv')
+data_WHO <- read.csv('data/WHO_country.csv')
+data1 <- read.csv('data/COVID19_line_list_data.csv')
+data3 <- read.csv('data/COVID19_open_line_list.csv')
+data4 <- read.csv('data/time_series_covid_19_confirmed.csv')
+data5 <- read.csv('data/time_series_covid_19_deaths.csv')
+data6 <- read.csv('data/time_series_covid_19_recovered.csv')
  # ![Sample Image](SampleImage.png){width=500px}
 ```
 
