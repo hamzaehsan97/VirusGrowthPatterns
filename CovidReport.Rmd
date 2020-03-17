@@ -1,0 +1,41 @@
+---
+title: "Enter your project title"
+author: "Your Name"
+output: html_document
+runtime: shiny
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE, fig.height = 4, fig.width = 6 )
+```
+
+
+```{r}
+library(tidyverse) 
+```
+
+```{r}
+#Import WHO report data
+data_WHO <- read.csv('WHO_country.csv')
+data1 <- read.csv('COVID19_line_list_data.csv')
+data2 <- read.csv('2019_nCOV_data.csv')
+data3 <- read.csv('COVID19_open_line_list.csv')
+data4 <- read.csv('time_series_covid_19_confirmed.csv')
+data5 <- read.csv('time_series_covid_19_deaths.csv')
+data6 <- read.csv('time_series_covid_19_recovered.csv')
+```
+
+## Shiny App Discussion
+
+A ~500 word report on the most interesting findings in your project. Include two screenshots of your Shiny App. 
+
+You may insert images and adjust their width as shown below. 
+
+Make sure your image is in tnhe same folder as the .Rmd file, and that this is set as your working directory. The best way to ensure this is to use an R Project. 
+
+![Sample Image](SampleImage.png){width=500px}
+
+## Technical Report 
+
+A ~500 word report written for the instructor, describing how you used the techniques you learned in this class in your project. Describe any challenges you faced in working with your dataset, and how you used skills from this class to overcome those challenges. 
