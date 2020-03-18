@@ -12,27 +12,245 @@ knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE, fig.height = 4
 
 
 ```{r}
+#Import required libraries
 library(tidyverse) 
+library(tidytext)
+library(ggplot2)
+library(rtweet)
+library(gtrendsR)
+library(plyr)
+library(magrittr)
+library(rvest)
+library(shiny)
+library(leaflet)
+library(dplyr)
+library(leaflet.extras)
 ```
 
 ```{r}
-#Import WHO report data
-data_WHO <- read.csv('data/WHO_country.csv')
-data1 <- read.csv('data/COVID19_line_list_data.csv')
-data3 <- read.csv('data/COVID19_open_line_list.csv')
-data4 <- read.csv('data/time_series_covid_19_confirmed.csv')
-data5 <- read.csv('data/time_series_covid_19_deaths.csv')
-data6 <- read.csv('data/time_series_covid_19_recovered.csv')
- # ![Sample Image](SampleImage.png){width=500px}
+#Import local Datasets
+country_confirm <- read.csv('data/time_series_covid_19_confirmed.csv')
+country_deaths <- read.csv('data/time_series_covid_19_deaths.csv')
+country_recovered <- read.csv('data/time_series_covid_19_recovered.csv')
 ```
 
+```{r}
+#Import data from Google API
+keywords=c("Coronavirus","facebook","wuhan") #define the keywords
+time=("2020-01-01 2020-03-17") #set the time window
+channel='web' #set channel 
+trends = gtrends(keywords, gprop =channel, time = time ) #Get trends from Google API 
+trends <- rbind.fill(trends) #Create CSV format dataset from data object
+
+#Clean google trends dataset
+trends <- trends %>% filter(!is.na(hits))
+trends$hits <- as.numeric(as.character(trends$hits))
+trends <- trends %>% filter((trends$hits > 0.0))
+```
+
+
+```{r}
+#Create google trends plot
+plot<-ggplot(data=trends, aes(x=date, y=hits,group=keyword,col=keyword))+
+        geom_line()+xlab('Time')+ylab('Relative Interest')+ theme_bw()+
+        theme(legend.title = element_blank(),legend.position="bottom",legend.text=element_text(size=12))+ggtitle("Google Search Volume")
+plot
+```
+```{r}
+#Get latitude and longitude of all countries. Remove all duplicates
+country_lat_long <- country_confirm%>%select(2,3,4)
+country_lat_long<- country_confirm_lat_long[!duplicated(country_confirm_lat_long$Country.Region),]
+
+#Sum all provincial values to a country and remove Duplicates for all countries
+country_confirm<-country_confirm%>%select(2,5:57)
+country_confirm<-country_confirm%>%group_by(Country.Region)%>%summarise_all(funs(sum))
+country_deaths<-country_deaths%>%select(2,5:57)
+country_deaths<-country_deaths%>%group_by(Country.Region)%>%summarise_all(funs(sum))
+country_recovered<-country_recovered%>%select(2,5:57)
+country_recovered<-country_recovered%>%group_by(Country.Region)%>%summarise_all(funs(sum))
+```
+
+
+
+```{r}
+country_confirm_dates <- country_confirm
+country_confirm_dates <- country_confirm_dates%>%pivot_longer(-Country.Region, names_to = 'Date', values_to = 'confirm_cases')
+country_confirm_dates$Date <-  gsub("[a-zA-Z ]", "", country_confirm_dates$Date)
+country_confirm_dates$month <- substr(country_confirm_dates$Date,0,1)
+country_confirm_dates$day <- substr(country_confirm_dates$Date,3,4)
+country_confirm_dates$day <-  gsub("\\.", "", country_confirm_dates$day)
+country_confirm_dates$month <- as.numeric(as.character(country_confirm_dates$month))
+country_confirm_dates$day <- as.numeric(as.character(country_confirm_dates$day))
+country_confirm_dates$days <- ((country_confirm_dates$month*30)+(country_confirm_dates$day)-30)
+country_confirm_dates <- country_confirm_dates%>%select(1,3,6)
+country_confirm_dates$ID <- paste(country_confirm_dates$Country.Region, as.character(country_confirm_dates$days),"")
+country_confirm_dates<- country_confirm_dates[!duplicated(country_confirm_dates$ID),]
+```
+
+```{r}
+country_death_dates <- country_deaths
+country_death_dates <- country_death_dates%>%pivot_longer(-Country.Region, names_to = 'Date', values_to = 'death_cases')
+country_death_dates$Date <-  gsub("[a-zA-Z ]", "", country_death_dates$Date)
+country_death_dates$month <- substr(country_death_dates$Date,0,1)
+country_death_dates$day <- substr(country_death_dates$Date,3,4)
+country_death_dates$day <-  gsub("\\.", "", country_death_dates$day)
+country_death_dates$month <- as.numeric(as.character(country_death_dates$month))
+country_death_dates$day <- as.numeric(as.character(country_death_dates$day))
+country_death_dates$days <- ((country_death_dates$month*30)+(country_death_dates$day)-30)
+country_death_dates <- country_death_dates%>%select(1,3,6)
+country_death_dates$ID <- paste(country_death_dates$Country.Region, as.character(country_death_dates$days),"")
+country_death_dates<- country_death_dates[!duplicated(country_death_dates$ID),]
+```
+
+```{r}
+country_recovered_dates <- country_recovered
+country_recovered_dates <- country_recovered_dates%>%pivot_longer(-Country.Region, names_to = 'Date', values_to = 'recovered_cases')
+country_recovered_dates$Date <-  gsub("[a-zA-Z ]", "", country_recovered_dates$Date)
+country_recovered_dates$month <- substr(country_recovered_dates$Date,0,1)
+country_recovered_dates$day <- substr(country_recovered_dates$Date,3,4)
+country_recovered_dates$day <-  gsub("\\.", "", country_recovered_dates$day)
+country_recovered_dates$month <- as.numeric(as.character(country_recovered_dates$month))
+country_recovered_dates$day <- as.numeric(as.character(country_recovered_dates$day))
+country_recovered_dates$days <- ((country_recovered_dates$month*30)+(country_recovered_dates$day)-30)
+country_recovered_dates <- country_recovered_dates%>%select(1,3,6)
+country_recovered_dates$ID <- paste(country_recovered_dates$Country.Region, as.character(country_recovered_dates$days),"")
+country_recovered_dates<- country_recovered_dates[!duplicated(country_recovered_dates$ID),]
+```
+
+```{r}
+country_final<-left_join(x=country_confirm_dates,y=country_recovered_dates, by="ID")
+country_final<- country_final%>%select(1:4,6)
+country_final <- country_final %>% distinct()
+country_final<-left_join(x=country_final,y=country_death_dates, by="ID")
+country_final<- country_final%>%select(1:5,7)
+country_final <- country_final %>% distinct()
+```
+
+
+```{r}
+data<-left_join(x=country_final,y=country_lat_long,by=c("Country.Region.x"="Country.Region"))
+```
+
+
+
+
+```{r}
+ui <- fluidPage(
+  mainPanel( 
+    fluidRow(
+      leafletOutput(outputId = "mymap",width = "100%", height = 400),
+          absolutePanel(top = 60, left = 20, 
+          checkboxInput("markers", "Cases", FALSE),
+          checkboxInput("deaths", "Heatmap", FALSE)
+        ),
+    ),
+    fluidRow(
+       column(4, 
+               checkboxGroupInput("case_type", 
+                                  h3("Select Case Type"), 
+                                  choices = list("Confirmedcases" = "confirmedcases", 
+                                                 "Deaths" = "deaths", 
+                                                 "Recovered" = "recovered"),
+                                  selected = "Deaths")
+               ),
+     column(4,
+               sliderInput("day_number",
+                           "Day Number:",
+                           min = 1,
+                           max = 74,
+                           value = 70)
+        ),
+    )
+))
+```
+
+```{r}
+server <- function(input, output, session) {
+  
+ pal <- colorNumeric(
+    palette = c('gold', 'orange', 'dark orange', 'orange red', 'red', 'dark red'),
+    domain = data$confirm_cases)
+  
+ pal2 <- colorFactor(
+    palette = c('blue', 'yellow', 'red'),
+    domain = data$death_cases
+  )
+  
+#create the map
+  output$mymap <- renderLeaflet({
+    mapday <-   as.numeric(as.character(input$day_number))  
+    leaflet(data) %>% 
+      setView(lng = 41, lat = 12, zoom = 1.4)  %>% 
+      addTiles() %>% 
+      addCircles(data = data%>%filter(data$days.x == mapday),
+                 lat = ~ data$Lat,
+                 lng = ~ data$Long,
+                 weight = 1,
+                 radius = ~sqrt(data$confirm_cases)*250,
+                 popup = ~as.character(data$confirm_cases),
+                 label = ~as.character(data$Country.Region.x),
+                 color = ~pal(data$confirm_cases),
+                 fillOpacity = 0.5
+                 )
+  })
+  
+
+  observe({
+    proxy <- leafletProxy("mymap", data = data%>%filter(data$days.x == input$day_number))
+    proxy %>% clearMarkers()
+    if (input$markers) {
+      proxy %>% addCircleMarkers(stroke = FALSE,
+                                 color = ~pal(data$confirm_cases),
+                                 fillOpacity = 0.05,
+                                 radius = ~sqrt(data$confirm_cases)*0.1,
+                                 label = ~as.character(paste0(data$Country.Region.x,
+                                  sep = " ",
+                                  data$confirm_cases))
+                                 ) %>%
+                                  addLegend("bottomright",
+                                            pal = pal2,
+                                            values = data$confirm_cases,
+                                            title = "Confirmed Cases",
+                                            opacity = 1
+                                  )
+      }
+    else {
+      proxy %>% clearMarkers() %>% clearControls()
+    }
+  })
+  
+  observe({
+    proxy <- leafletProxy("mymap", data = data)
+    proxy %>% clearMarkers()
+    if (input$deaths) {
+      proxy %>% addHeatmap(lng=~data$Long,
+                            lat=~data$Lat,
+                            blur =  10,
+                            max = 0.05,
+                            radius = ~sqrt(data$death_cases)*1000,
+                            minOpacity = 0.5) 
+      }
+    else{
+      proxy %>% clearHeatmap()
+      }
+  })
+}
+```
+
+```{r}
+shinyApp(ui, server)
+```
 ## Shiny App Discussion
+1) Talk about the sudden increase which is related to the changes made in the way the tests were being taken.
+2) Talk about the decrease in cases and deaths and relate that with the actions that china took on a certain date.
+3) Talk about the sudden increase related to the increase in cases outside of China with countries having less strict isolation/testing protocols
+4) Talk about any corelation the number of deaths outside china with google trends.
 
 A ~500 word report on the most interesting findings in your project. Include two screenshots of your Shiny App. 
 
 You may insert images and adjust their width as shown below. 
 
-Make sure your image is in tnhe same folder as the .Rmd file, and that this is set as your working directory. The best way to ensure this is to use an R Project. 
+Make sure your image is in the same folder as the .Rmd file, and that this is set as your working directory. The best way to ensure this is to use an R Project. 
 
 
 

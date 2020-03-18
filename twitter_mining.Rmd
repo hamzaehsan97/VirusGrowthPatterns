@@ -1,0 +1,46 @@
+---
+title: "twitter_data_mining"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidytext)
+library(rtweet)
+```
+
+```{r echo=FALSE}
+#Create Sign-in variable to access Twitter Dataset
+api_key <- '6q04hq5WmoLk65hYm4qNwKIhj'
+api_secret_key <- '4sww2NHTDX2YtV3L24vskgSLzLt6WJHyUu18Fc97DIHR9L1h49'
+access <- '824432562072408064-UZaOStqphJT9ZtTrus8I9vqm8qQVRJz'
+access_secret_key <- 'uBrnovCOTVNLoZXReBJFYETfWop7QUSbCiTWN9hTVFnP2'
+
+#Create token for Twitter
+token <- create_token(
+  app = "COVID-19 Growth Analysis",
+  consumer_key = api_key,
+  consumer_secret = api_secret_key,
+  access_token=access,
+  access_secret = access_secret_key)
+print(token)
+```
+
+```{r}
+since <- "2020-03-13 22:59:59"
+until <- "2020-03-13 23:59:59"
+twitter_data <- search_tweets('#coronavirus',
+                              n=1800, 
+                              include_rts=FALSE,
+                              lang='en',
+                              type = 'recent'
+                              )
+```
+
+```{r}
+ggplot(twitter_data, aes(x=twitter_data$created_at))+geom_histogram()
+```
