@@ -57,3 +57,7 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 * Professor Andrew J Sage (https://github.com/andrewjsage)
 * Sudalairaj Kumar (https://www.kaggle.com/sudalairajkumar)
+
+## Screenshots
+
+![Alt text](/images/latestScreenshot.png?raw=true "Fatalaties Since Patient Zero")
