@@ -265,10 +265,7 @@ shinyApp(ui, server)
 
 ![Worldwide Deaths Map](images/Deaths_Heatmap.png){width=500px}
 ![Confirmed Cases Graph](images/Confirmed_Cases.png){width=500px}
-1) Talk about the sudden increase which is related to the changes made in the way the tests were being taken.
-2) Talk about the decrease in cases and deaths and relate that with the actions that china took on a certain date.
-3) Talk about the sudden increase related to the increase in cases outside of China with countries having less strict isolation/testing protocols
-4) Talk about any corelation the number of deaths outside china with google trends.
+
 ## Shiny App Discussion
 
 
