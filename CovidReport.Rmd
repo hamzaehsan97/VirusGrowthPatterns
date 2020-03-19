@@ -2,7 +2,7 @@
 title: "COVID-19 Growth Patterns"
 author: "Hamza Ehsan"
 output: html_document
-#runtime: shiny
+runtime: shiny
 ---
 
 
@@ -39,27 +39,20 @@ country_recovered <- read.csv('data/time_series_covid_19_recovered.csv')
 keywords=c("Coronavirus","facebook","wuhan") #define the keywords
 time=("2020-01-01 2020-03-17") #set the time window
 channel='web' #set channel 
-trends = gtrends(keywords, gprop =channel, time = time ) #Get trends from Google API 
+trends = gtrends(keywords, gprop =channel, time = time) #Get trends from Google API 
 trends <- rbind.fill(trends) #Create CSV format dataset from data object
 
 #Clean google trends dataset
 trends <- trends %>% filter(!is.na(hits))
 trends$hits <- as.numeric(as.character(trends$hits))
-trends <- trends %>% filter((trends$hits > 0.0))
+trends <- trends %>% filter((trends$hits > 0.0) & !is.na(trends$time))
 ```
 
 
-```{r}
-#Create google trends plot
-plot<-ggplot(data=trends, aes(x=date, y=hits,group=keyword,col=keyword))+
-        geom_line()+xlab('Time')+ylab('Relative Interest')+ theme_bw()+
-        theme(legend.title = element_blank(),legend.position="bottom",legend.text=element_text(size=12))+ggtitle("Google Search Volume")
-plot
-```
 ```{r}
 #Get latitude and longitude of all countries. Remove all duplicates
 country_lat_long <- country_confirm%>%select(2,3,4)
-country_lat_long<- country_confirm_lat_long[!duplicated(country_confirm_lat_long$Country.Region),]
+country_lat_long<- country_lat_long[!duplicated(country_lat_long$Country.Region),]
 
 #Sum all provincial values to a country and remove Duplicates for all countries
 country_confirm<-country_confirm%>%select(2,5:57)
@@ -129,6 +122,9 @@ country_final <- country_final %>% distinct()
 
 ```{r}
 data<-left_join(x=country_final,y=country_lat_long,by=c("Country.Region.x"="Country.Region"))
+data2<-data%>%select(2,3,5,6)
+data2<-data2%>%group_by(days.x)%>%summarise_all(funs(sum))
+
 ```
 
 
@@ -137,29 +133,34 @@ data<-left_join(x=country_final,y=country_lat_long,by=c("Country.Region.x"="Coun
 ```{r}
 ui <- fluidPage(
   mainPanel( 
+    titlePanel("COVID-19 Cases World-Wide"),
     fluidRow(
       leafletOutput(outputId = "mymap",width = "100%", height = 400),
-          absolutePanel(top = 60, left = 20, 
-          checkboxInput("markers", "Cases", FALSE),
-          checkboxInput("deaths", "Heatmap", FALSE)
+          absolutePanel(top = 80, left = 70, 
+          checkboxInput("deaths", "Deaths Heat Map", FALSE)
         ),
     ),
     fluidRow(
-       column(4, 
-               checkboxGroupInput("case_type", 
-                                  h3("Select Case Type"), 
-                                  choices = list("Confirmedcases" = "confirmedcases", 
-                                                 "Deaths" = "deaths", 
-                                                 "Recovered" = "recovered"),
-                                  selected = "Deaths")
-               ),
-     column(4,
+      
+     column(8,
                sliderInput("day_number",
-                           "Day Number:",
-                           min = 1,
+                           "Days Since Case Zero:",
+                           min = 22,
                            max = 74,
                            value = 70)
         ),
+     column(4,
+           varSelectInput("variable", 
+                        "Select Variable to Display", 
+                      data = data2 %>% select(confirm_cases, recovered_cases, death_cases))
+  )
+     
+    ),
+    fluidRow(
+      plotOutput("plot2")
+    ),
+  fluidRow(
+      plotOutput("plot")
     )
 ))
 ```
@@ -168,50 +169,52 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
  pal <- colorNumeric(
-    palette = c('gold', 'orange', 'dark orange', 'orange red', 'red', 'dark red'),
+    palette = c( 'orange', 'orange red','dark red'),
     domain = data$confirm_cases)
   
  pal2 <- colorFactor(
-    palette = c('blue', 'yellow', 'red'),
+    palette = c('orange red','red', 'dark red', 'maroon'),
     domain = data$death_cases
   )
   
 #create the map
   output$mymap <- renderLeaflet({
-    mapday <-   as.numeric(as.character(input$day_number))  
+    mapday <-input$day_number  
     leaflet(data) %>% 
-      setView(lng = 41, lat = 12, zoom = 1.4)  %>% 
+      setView(lng = 41, lat = 12, zoom = 2.1)  %>% 
       addTiles() %>% 
       addCircles(data = data%>%filter(data$days.x == mapday),
-                 lat = ~ data$Lat,
-                 lng = ~ data$Long,
+                 lat = ~ Lat,
+                 lng = ~ Long,
                  weight = 1,
-                 radius = ~sqrt(data$confirm_cases)*250,
-                 popup = ~as.character(data$confirm_cases),
-                 label = ~as.character(data$Country.Region.x),
-                 color = ~pal(data$confirm_cases),
+                 radius = ~sqrt(confirm_cases)*4500,
+                 popup = ~as.character(confirm_cases),
+                 label = ~as.character(confirm_cases),
+                 color = ~pal(confirm_cases),
                  fillOpacity = 0.5
                  )
   })
   
 
   observe({
-    proxy <- leafletProxy("mymap", data = data%>%filter(data$days.x == input$day_number))
+    mapday <-input$day_number
+    deathData <- data%>%filter(data$days.x == mapday)
+    proxy <- leafletProxy("mymap",data = deathData)
     proxy %>% clearMarkers()
-    if (input$markers) {
-      proxy %>% addCircleMarkers(stroke = FALSE,
-                                 color = ~pal(data$confirm_cases),
-                                 fillOpacity = 0.05,
-                                 radius = ~sqrt(data$confirm_cases)*0.1,
-                                 label = ~as.character(paste0(data$Country.Region.x,
-                                  sep = " ",
-                                  data$confirm_cases))
+    if (input$deaths) {
+      
+      proxy %>% addCircleMarkers(data = deathData,
+                                 stroke = FALSE,
+                                 color = ~pal2(deathData$death_cases),
+                                 fillOpacity = 0.5,
+                                 radius = ~sqrt(deathData$death_cases)*1.5,
+                                 label = ~as.character(deathData$death_cases)
                                  ) %>%
                                   addLegend("bottomright",
                                             pal = pal2,
-                                            values = data$confirm_cases,
-                                            title = "Confirmed Cases",
-                                            opacity = 1
+                                            values = deathData$death_cases,
+                                            title = "Fatal Cases",
+                                            opacity = 100
                                   )
       }
     else {
@@ -219,20 +222,40 @@ server <- function(input, output, session) {
     }
   })
   
-  observe({
-    proxy <- leafletProxy("mymap", data = data)
-    proxy %>% clearMarkers()
-    if (input$deaths) {
-      proxy %>% addHeatmap(lng=~data$Long,
-                            lat=~data$Lat,
-                            blur =  10,
-                            max = 0.05,
-                            radius = ~sqrt(data$death_cases)*1000,
-                            minOpacity = 0.5) 
-      }
-    else{
-      proxy %>% clearHeatmap()
-      }
+  #!!input$variable
+  output$plot2 <- renderPlot({
+    numday <- input$day_number
+    ggplot(data = data2 %>% filter(data2$days.x <= numday)) + 
+          geom_point(aes(x = days.x,
+                         y=!!input$variable, size=!!input$variable)) +
+          geom_smooth(aes(x = days.x,
+                          y=!!input$variable)) +
+          ggtitle("Virus Growth Versus Days") +
+          xlab("Days Since Case Zero") +
+          ylab("Selected Variable")+
+          theme_bw()+
+          theme(legend.title =     element_blank(),
+                legend.position="bottom",
+                legend.text=element_text(size=12)
+          )
+  })
+  
+  
+  output$plot <- renderPlot({
+    numday <- input$day_number
+    ggplot(data=trends,
+           aes(x=date,
+               y=hits,
+               group=keyword,
+               col=keyword))+
+              geom_line()+
+              xlab('Time')+
+              ylab('Relative Interest')+
+              theme_bw()+
+              theme(legend.title =    element_blank(),
+                    legend.position="bottom",
+                    legend.text=element_text(size=12))+
+              ggtitle("Google Search Volume for Coronavirus")
   })
 }
 ```
