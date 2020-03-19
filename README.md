@@ -60,4 +60,9 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## Screenshots
 
-![Alt text](/images/latestScreenshot.png?raw=true "Fatalaties Since Patient Zero")
+# Deaths Heat Map
+![Death Heatmap Image](/images/Deaths_Heatmap.png?raw=true "Deaths Heat Map")
+
+# Fatalaties Since Patient Zero
+![Fatalies Graph Image](/images/latestScreenshot.png?raw=true "Fatalaties Since Patient Zero")
+
