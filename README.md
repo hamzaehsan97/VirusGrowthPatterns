@@ -15,13 +15,17 @@ The following libraries are required to recreate this app. You can download thes
 
 ```
 library(tidyverse) 
-library(dplyr)
+library(tidytext)
 library(ggplot2)
-library(ggthemes)
-library(scales)
-library(forcats)
-library (plyr)
-library(gridExtra)
+library(rtweet)
+library(gtrendsR)
+library(plyr)
+library(magrittr)
+library(rvest)
+library(shiny)
+library(leaflet)
+library(dplyr)
+library(leaflet.extras)
 ```
 
 
