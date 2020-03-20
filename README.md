@@ -35,6 +35,7 @@ library(leaflet.extras)
 2) knit file to html.
 
 ## Results
+https://hamza-ehsan.shinyapps.io/COVID-19_Growth_Patterns/ {Shiny-App}
 https://hamzaehsan97.github.io/COVID-19_Growth_Patterns/
 
 ## Built With
