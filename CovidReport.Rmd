@@ -2,7 +2,7 @@
 title: "COVID-19 Growth Patterns"
 author: "Hamza Ehsan"
 output: html_document
-#runtime: shiny
+runtime: shiny
 ---
 
 
@@ -240,6 +240,9 @@ server <- function(input, output, session) {
   })
   
   
+  
+  
+  
   output$plot <- renderPlot({
     numday <- input$day_number
     ggplot(data=trends,
@@ -256,12 +259,16 @@ server <- function(input, output, session) {
                     legend.text=element_text(size=12))+
               ggtitle("Google Search Volume for Coronavirus")
   })
+  
+  
+  
 }
 ```
 
 ```{r}
 shinyApp(ui, server)
 ```
+
 
 ![Worldwide Deaths Map](images/Deaths_Heatmap.png){width=500px}
 ![Confirmed Cases Graph](images/Confirmed_Cases.png){width=500px}

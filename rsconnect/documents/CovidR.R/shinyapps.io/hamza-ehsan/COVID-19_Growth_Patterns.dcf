@@ -1,0 +1,12 @@
+name: COVID-19_Growth_Patterns
+title: COVID-19_Growth_Patterns
+username:
+account: hamza-ehsan
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1971410
+bundleId: 2902491
+url: https://hamza-ehsan.shinyapps.io/COVID-19_Growth_Patterns/
+when: 1584721918.72995
+asMultiple: FALSE
+asStatic: FALSE
